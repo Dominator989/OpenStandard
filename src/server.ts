@@ -3,15 +3,12 @@ import path from "node:path";
 import { z } from "zod";
 import { createScan, getScan, listScans } from "./database.js";
 import { scanUrl } from "./scanner.js";
+import { assertSafeUrl, UnsafeUrlError } from "./url-security.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3100);
 const publicDirectory = path.resolve("public");
-const scanRequest = z.object({
-  url: z.string().trim().min(1, "Enter a website URL.").transform((value) => /^https?:\/\//i.test(value) ? value : `https://${value}`).pipe(
-    z.string().url("Enter a valid website URL.").refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "Use a public http or https URL.")
-  )
-});
+const scanRequest = z.object({ url: z.string().trim().min(1, "Enter a website URL.") });
 
 app.use(express.json());
 app.use(express.static(publicDirectory));
@@ -31,8 +28,15 @@ app.get("/api/scans/:id/screenshot", (request, response) => {
 app.post("/api/scans", async (request, response) => {
   const parsed = scanRequest.safeParse(request.body);
   if (!parsed.success) return response.status(400).json({ error: parsed.error.issues[0]?.message ?? "Enter a valid URL." });
-  const scanId = createScan(parsed.data.url);
-  void scanUrl(scanId, parsed.data.url);
+  let safeUrl: URL;
+  try {
+    safeUrl = await assertSafeUrl(parsed.data.url);
+  } catch (error) {
+    const message = error instanceof UnsafeUrlError ? error.message : "The website could not be safely validated.";
+    return response.status(400).json({ error: message });
+  }
+  const scanId = createScan(safeUrl.toString());
+  void scanUrl(scanId, safeUrl.toString());
   return response.status(202).json({ scanId });
 });
 
