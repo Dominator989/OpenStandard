@@ -1,4 +1,5 @@
 import express from "express";
+import { createHash, randomBytes } from "node:crypto";
 import path from "node:path";
 import { z } from "zod";
 import { createScan, getScan, listScans } from "./database.js";
@@ -12,6 +13,7 @@ const publicDirectory = path.resolve("public");
 const scanRequest = z.object({ url: z.string().trim().min(1, "Enter a website URL.") });
 const authRequest = z.object({ email: z.string(), password: z.string() });
 const sessionCookieName = "openstandard_session";
+const guestCookieName = "openstandard_guest";
 
 app.use(express.json());
 app.use(express.static(publicDirectory));
@@ -33,13 +35,20 @@ function clearSessionCookie(response: express.Response): void {
   response.setHeader("Set-Cookie", `${sessionCookieName}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`);
 }
 
-function requireUser(request: express.Request, response: express.Response) {
-  const user = authenticateSession(readCookie(request, sessionCookieName));
-  if (!user) {
-    response.status(401).json({ error: "Sign in to access your scan workspace." });
-    return undefined;
-  }
-  return user;
+function hashGuestToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+function getGuestToken(request: express.Request, response: express.Response): string {
+  const existing = readCookie(request, guestCookieName);
+  if (existing) return existing;
+  const token = randomBytes(32).toString("base64url");
+  response.setHeader("Set-Cookie", `${guestCookieName}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=2592000`);
+  return token;
+}
+
+function currentUser(request: express.Request) {
+  return authenticateSession(readCookie(request, sessionCookieName));
 }
 
 app.get("/api/health", (_request, response) => response.json({ status: "ok" }));
@@ -72,27 +81,26 @@ app.post("/api/auth/logout", (request, response) => {
   return response.status(204).end();
 });
 app.get("/api/scans", (request, response) => {
-  const user = requireUser(request, response);
-  if (!user) return;
-  return response.json({ scans: listScans(user.id) });
+  const user = currentUser(request);
+  return response.json({ scans: user ? listScans(user.id) : [] });
 });
 app.get("/api/scans/:id", (request, response) => {
-  const user = requireUser(request, response);
-  if (!user) return;
-  const scan = getScan(Number(request.params.id), user.id);
+  const user = currentUser(request);
+  const guestToken = user ? undefined : readCookie(request, guestCookieName);
+  const scan = getScan(Number(request.params.id), user?.id, guestToken ? hashGuestToken(guestToken) : undefined);
   if (!scan) return response.status(404).json({ error: "Scan not found." });
   return response.json(scan);
 });
 app.get("/api/scans/:id/screenshot", (request, response) => {
-  const user = requireUser(request, response);
-  if (!user) return;
-  const scan = getScan(Number(request.params.id), user.id);
+  const user = currentUser(request);
+  const guestToken = user ? undefined : readCookie(request, guestCookieName);
+  const scan = getScan(Number(request.params.id), user?.id, guestToken ? hashGuestToken(guestToken) : undefined);
   if (!scan?.scan.screenshotPath) return response.status(404).end();
   return response.sendFile(path.resolve(scan.scan.screenshotPath));
 });
 app.post("/api/scans", async (request, response) => {
-  const user = requireUser(request, response);
-  if (!user) return;
+  const user = currentUser(request);
+  const guestToken = user ? null : getGuestToken(request, response);
   const parsed = scanRequest.safeParse(request.body);
   if (!parsed.success) return response.status(400).json({ error: parsed.error.issues[0]?.message ?? "Enter a valid URL." });
   let safeUrl: URL;
@@ -102,7 +110,7 @@ app.post("/api/scans", async (request, response) => {
     const message = error instanceof UnsafeUrlError ? error.message : "The website could not be safely validated.";
     return response.status(400).json({ error: message });
   }
-  const scanId = createScan(safeUrl.toString(), user.id);
+  const scanId = createScan(safeUrl.toString(), user?.id ?? null, guestToken ? hashGuestToken(guestToken) : null);
   void scanUrl(scanId, safeUrl.toString());
   return response.status(202).json({ scanId });
 });

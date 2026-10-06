@@ -73,6 +73,10 @@ across refreshes and devices. Passwords are stored as scrypt hashes, never as
 plain text. Sessions use random, hashed tokens in an HTTP-only cookie and scans,
 reports, and screenshots are scoped to the signed-in user.
 
+Scanning does not require an account. Guest scans are linked to a secure
+browser cookie and recent scan IDs are kept locally on that device. Signing in
+is optional; it upgrades the workspace to persistent, cross-device history.
+
 The current development implementation does not yet include email
 verification, password reset, rate limiting, or account deletion. Add those
 controls before operating a public production service.

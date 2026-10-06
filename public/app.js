@@ -11,6 +11,7 @@ const accountSummary = document.querySelector("#account-summary");
 const logoutButton = document.querySelector("#logout-button");
 const authTabs = document.querySelectorAll("[data-auth-mode]");
 let authMode = "login";
+let signedIn = false;
 let installPrompt;
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
@@ -27,10 +28,22 @@ async function loadScans() {
   document.querySelectorAll("[data-scan-id]").forEach((link) => link.addEventListener("click", () => showReport(link.dataset.scanId)));
 }
 
+async function loadGuestScans() {
+  const scanIds = JSON.parse(localStorage.getItem("openstandard_guest_scans") || "[]");
+  const results = await Promise.all(scanIds.map(async (id) => {
+    const response = await fetch(`/api/scans/${id}`);
+    return response.ok ? (await response.json()).scan : null;
+  }));
+  const scans = results.filter(Boolean);
+  scanCount.textContent = scans.length ? `${scans.length} on this device` : "";
+  scansElement.innerHTML = scans.length ? scans.map((scan) => `<article class="scan-card"><div><a href="#report" data-scan-id="${scan.id}">${escapeHtml(scan.pageTitle || scan.url)}</a><div class="scan-meta">${escapeHtml(scan.url)} · ${formatDate(scan.createdAt)}</div></div><span class="status ${scan.status}">${scan.status === "complete" ? "Complete" : escapeHtml(scan.status)}</span></article>`).join("") : '<div class="empty">Your recent guest scans will appear here. Sign in to keep them across devices.</div>';
+  document.querySelectorAll("[data-scan-id]").forEach((link) => link.addEventListener("click", () => showReport(link.dataset.scanId)));
+}
+
 function setAuthenticatedUser(user) {
-  const signedIn = Boolean(user);
+  signedIn = Boolean(user);
   authPanel.hidden = signedIn;
-  form.hidden = !signedIn;
+  form.hidden = false;
   accountSummary.hidden = !signedIn;
   logoutButton.hidden = !signedIn;
   if (signedIn) accountSummary.textContent = user.email;
@@ -41,6 +54,7 @@ async function loadCurrentUser() {
   const { user } = await response.json();
   setAuthenticatedUser(user);
   if (user) await loadScans();
+  else await loadGuestScans();
 }
 
 async function showReport(id) {
@@ -86,6 +100,8 @@ form.addEventListener("submit", async (event) => {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "The scan could not be started.");
     message.textContent = "Scan started. This page will update when the report is ready.";
+    const guestScanIds = JSON.parse(localStorage.getItem("openstandard_guest_scans") || "[]");
+    if (!signedIn) localStorage.setItem("openstandard_guest_scans", JSON.stringify([result.scanId, ...guestScanIds].slice(0, 20)));
     const poll = async () => {
       const scanResponse = await fetch(`/api/scans/${result.scanId}`);
       const scanResult = await scanResponse.json();
@@ -138,8 +154,7 @@ logoutButton.addEventListener("click", async () => {
   await fetch("/api/auth/logout", { method: "POST" });
   reportElement.hidden = true;
   setAuthenticatedUser(null);
-  scansElement.innerHTML = '<div class="empty">Sign in to see your saved scans.</div>';
-  scanCount.textContent = "";
+  await loadGuestScans();
 });
 
 window.addEventListener("beforeinstallprompt", (event) => {
