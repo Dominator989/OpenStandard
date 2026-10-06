@@ -1,0 +1,12 @@
+{
+  "name": "AccessLens",
+  "short_name": "AccessLens",
+  "description": "Evidence-backed accessibility checks for modern web teams.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7f9",
+  "theme_color": "#0b273b",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

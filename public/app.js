@@ -3,6 +3,8 @@ const message = document.querySelector("#form-message");
 const scansElement = document.querySelector("#scans");
 const reportElement = document.querySelector("#report");
 const scanCount = document.querySelector("#scan-count");
+const installButton = document.querySelector("#install-app");
+let installPrompt;
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
 const formatDate = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
@@ -27,10 +29,25 @@ async function showReport(id) {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const button = form.querySelector("button");
+  const urlInput = document.querySelector("#url");
+  const enteredUrl = urlInput.value.trim();
+  if (!enteredUrl) {
+    message.textContent = "Enter a website address to scan.";
+    urlInput.focus();
+    return;
+  }
+  const normalizedUrl = /^https?:\/\//i.test(enteredUrl) ? enteredUrl : `https://${enteredUrl}`;
+  try {
+    new URL(normalizedUrl);
+  } catch {
+    message.textContent = "Enter a valid website address, such as example.com.";
+    urlInput.focus();
+    return;
+  }
   button.disabled = true;
   message.textContent = "Loading the page and running checks…";
   try {
-    const response = await fetch("/api/scans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: new FormData(form).get("url") }) });
+    const response = await fetch("/api/scans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: normalizedUrl }) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "The scan could not be started.");
     message.textContent = "Scan started. This page will update when the report is ready.";
@@ -50,4 +67,19 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  installPrompt = event;
+  installButton.hidden = false;
+});
+
+installButton.addEventListener("click", async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice;
+  installPrompt = undefined;
+  installButton.hidden = true;
+});
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js").catch(() => undefined);
 loadScans();

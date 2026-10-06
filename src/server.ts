@@ -7,7 +7,11 @@ import { scanUrl } from "./scanner.js";
 const app = express();
 const port = Number(process.env.PORT ?? 3100);
 const publicDirectory = path.resolve("public");
-const scanRequest = z.object({ url: z.string().url().refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "Use a public http or https URL.") });
+const scanRequest = z.object({
+  url: z.string().trim().min(1, "Enter a website URL.").transform((value) => /^https?:\/\//i.test(value) ? value : `https://${value}`).pipe(
+    z.string().url("Enter a valid website URL.").refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "Use a public http or https URL.")
+  )
+});
 
 app.use(express.json());
 app.use(express.static(publicDirectory));

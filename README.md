@@ -24,6 +24,11 @@ The first Phase 1 vertical slice is now available:
 - Capture a full-page screenshot as reproducible scan evidence
 - Group findings by impact and show the affected selector and HTML
 - Open the relevant axe-core guidance for each finding
+- Install as a standalone desktop or mobile web app from a supported browser
+
+The URL field accepts either a complete address such as
+`https://example.com` or a domain such as `example.com`. AccessLens adds the
+secure protocol when it is omitted.
 
 ## Local development
 
