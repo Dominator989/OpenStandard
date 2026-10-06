@@ -3,14 +3,32 @@ import { chromium } from "playwright";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { addFinding, completeScan, failScan } from "./database.js";
+import { assertSafeUrl, UnsafeUrlError } from "./url-security.js";
 
 const screenshotDirectory = path.resolve("data/screenshots");
 
 export async function scanUrl(scanId: number, url: string): Promise<void> {
   const browser = await chromium.launch({ headless: true });
   try {
+    const safeUrl = await assertSafeUrl(url);
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    await page.route("**/*", async (route) => {
+      const requestUrl = route.request().url();
+      if (!/^https?:\/\//i.test(requestUrl)) {
+        await route.abort("blockedbyclient");
+        return;
+      }
+      try {
+        await assertSafeUrl(requestUrl);
+        await route.continue();
+      } catch (error) {
+        await route.abort("blockedbyclient");
+        if (error instanceof UnsafeUrlError) {
+          console.warn(`Blocked unsafe browser request: ${requestUrl} (${error.message})`);
+        }
+      }
+    });
+    await page.goto(safeUrl.toString(), { waitUntil: "domcontentloaded", timeout: 30_000 });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => undefined);
     const title = await page.title();
     const result = await page.evaluate(async (source) => {

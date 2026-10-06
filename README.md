@@ -25,6 +25,7 @@ The first Phase 1 vertical slice is now available:
 - Group findings by impact and show the affected selector and HTML
 - Open the relevant axe-core guidance for each finding
 - Install as a standalone desktop or mobile web app from a supported browser
+- Block local, private, and internal network targets before and during scans
 
 The URL field accepts either a complete address such as
 `https://example.com` or a domain such as `example.com`. OpenStandard adds the
@@ -59,3 +60,7 @@ Open `http://localhost:3100`. Scan results are stored in
 Automated results are a starting point, not a conformance claim. Keyboard
 navigation, focus behaviour, content meaning, zoom, and assistive technology
 testing still require human review.
+
+OpenStandard only scans public HTTP and HTTPS destinations. It rejects
+credentials in URLs, non-standard ports, local hostnames, private IP ranges,
+and redirects or subresources that resolve to private networks.
