@@ -15,7 +15,12 @@ export function normalizeUrl(input: string): URL {
   const value = input.trim();
   if (!value) throw new UnsafeUrlError("Enter a website URL.");
   const hasProtocol = /^[a-z][a-z\d+.-]*:/i.test(value);
-  const url = new URL(hasProtocol ? value : `https://${value}`);
+  let url: URL;
+  try {
+    url = new URL(hasProtocol ? value : `https://${value}`);
+  } catch {
+    throw new UnsafeUrlError("Enter one valid website address, such as example.com.");
+  }
   if (!allowedProtocols.has(url.protocol)) throw new UnsafeUrlError("Only HTTP and HTTPS URLs can be scanned.");
   if (url.username || url.password) throw new UnsafeUrlError("URLs with embedded credentials cannot be scanned.");
   if (!allowedPorts.has(url.port)) throw new UnsafeUrlError("Only standard HTTP and HTTPS ports can be scanned.");
