@@ -4,6 +4,7 @@ const scansElement = document.querySelector("#scans");
 const reportElement = document.querySelector("#report");
 const scanCount = document.querySelector("#scan-count");
 const installButton = document.querySelector("#install-app");
+const authToggle = document.querySelector("#auth-toggle");
 const authPanel = document.querySelector("#auth-panel");
 const authForm = document.querySelector("#auth-form");
 const authMessage = document.querySelector("#auth-message");
@@ -42,7 +43,8 @@ async function loadGuestScans() {
 
 function setAuthenticatedUser(user) {
   signedIn = Boolean(user);
-  authPanel.hidden = signedIn;
+  if (signedIn) authPanel.hidden = true;
+  authToggle.hidden = signedIn;
   form.hidden = false;
   accountSummary.hidden = !signedIn;
   logoutButton.hidden = !signedIn;
@@ -155,6 +157,11 @@ logoutButton.addEventListener("click", async () => {
   reportElement.hidden = true;
   setAuthenticatedUser(null);
   await loadGuestScans();
+});
+
+authToggle.addEventListener("click", () => {
+  authPanel.hidden = !authPanel.hidden;
+  if (!authPanel.hidden) document.querySelector("#auth-email").focus();
 });
 
 window.addEventListener("beforeinstallprompt", (event) => {
