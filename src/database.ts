@@ -4,6 +4,7 @@ import path from "node:path";
 
 export type Scan = {
   id: number;
+  userId: string | null;
   url: string;
   pageTitle: string;
   status: "running" | "complete" | "failed";
@@ -11,6 +12,20 @@ export type Scan = {
   errorMessage: string | null;
   createdAt: string;
   completedAt: string | null;
+};
+
+export type AuthenticatedUser = {
+  id: string;
+  email: string;
+  passwordHash: string;
+  createdAt: string;
+};
+
+export type AuthSession = {
+  tokenHash: string;
+  userId: string;
+  expiresAt: string;
+  createdAt: string;
 };
 
 export type Finding = {
@@ -33,6 +48,7 @@ database.pragma("journal_mode = WAL");
 database.exec(`
   CREATE TABLE IF NOT EXISTS scans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT REFERENCES users(id),
     url TEXT NOT NULL,
     page_title TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL,
@@ -53,12 +69,29 @@ database.exec(`
     html TEXT NOT NULL,
     target TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS sessions (
+    token_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
 `);
 
-export function createScan(url: string): number {
+const scanColumns = database.prepare("PRAGMA table_info(scans)").all() as Array<{ name: string }>;
+if (!scanColumns.some((column) => column.name === "user_id")) {
+  database.exec("ALTER TABLE scans ADD COLUMN user_id TEXT REFERENCES users(id)");
+}
+
+export function createScan(url: string, userId: string): number {
   const result = database.prepare(
-    "INSERT INTO scans (url, status, created_at) VALUES (?, 'running', ?)"
-  ).run(url, new Date().toISOString());
+    "INSERT INTO scans (url, user_id, status, created_at) VALUES (?, ?, 'running', ?)"
+  ).run(url, userId, new Date().toISOString());
   return Number(result.lastInsertRowid);
 }
 
@@ -81,13 +114,34 @@ export function addFinding(scanId: number, finding: Omit<Finding, "id" | "scanId
   `).run({ scanId, ...finding });
 }
 
-export function getScan(scanId: number): { scan: Scan; findings: Finding[] } | undefined {
-  const scan = database.prepare("SELECT id, url, page_title as pageTitle, status, screenshot_path as screenshotPath, error_message as errorMessage, created_at as createdAt, completed_at as completedAt FROM scans WHERE id = ?").get(scanId) as Scan | undefined;
+export function getScan(scanId: number, userId?: string): { scan: Scan; findings: Finding[] } | undefined {
+  const scan = database.prepare("SELECT id, user_id as userId, url, page_title as pageTitle, status, screenshot_path as screenshotPath, error_message as errorMessage, created_at as createdAt, completed_at as completedAt FROM scans WHERE id = ? AND (? IS NULL OR user_id = ?)").get(scanId, userId ?? null, userId ?? null) as Scan | undefined;
   if (!scan) return undefined;
   const findings = database.prepare("SELECT id, scan_id as scanId, rule_id as ruleId, impact, help, description, help_url as helpUrl, selector, html, target FROM findings WHERE scan_id = ? ORDER BY CASE impact WHEN 'critical' THEN 1 WHEN 'serious' THEN 2 WHEN 'moderate' THEN 3 WHEN 'minor' THEN 4 ELSE 5 END, id").all(scanId) as Finding[];
   return { scan, findings };
 }
 
-export function listScans(): Scan[] {
-  return database.prepare("SELECT id, url, page_title as pageTitle, status, screenshot_path as screenshotPath, error_message as errorMessage, created_at as createdAt, completed_at as completedAt FROM scans ORDER BY id DESC LIMIT 20").all() as Scan[];
+export function listScans(userId: string): Scan[] {
+  return database.prepare("SELECT id, user_id as userId, url, page_title as pageTitle, status, screenshot_path as screenshotPath, error_message as errorMessage, created_at as createdAt, completed_at as completedAt FROM scans WHERE user_id = ? ORDER BY id DESC LIMIT 20").all(userId) as Scan[];
+}
+
+export function createUser(user: AuthenticatedUser): AuthenticatedUser {
+  database.prepare("INSERT INTO users (id, email, password_hash, created_at) VALUES (@id, @email, @passwordHash, @createdAt)").run(user);
+  return user;
+}
+
+export function findUserByEmail(email: string): AuthenticatedUser | undefined {
+  return database.prepare("SELECT id, email, password_hash as passwordHash, created_at as createdAt FROM users WHERE email = ?").get(email) as AuthenticatedUser | undefined;
+}
+
+export function createSession(session: AuthSession): void {
+  database.prepare("INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (@tokenHash, @userId, @expiresAt, @createdAt)").run(session);
+}
+
+export function findUserBySession(tokenHash: string, now: string): AuthenticatedUser | undefined {
+  return database.prepare("SELECT u.id, u.email, u.password_hash as passwordHash, u.created_at as createdAt FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ?").get(tokenHash, now) as AuthenticatedUser | undefined;
+}
+
+export function deleteSession(tokenHash: string): void {
+  database.prepare("DELETE FROM sessions WHERE token_hash = ?").run(tokenHash);
 }

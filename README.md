@@ -26,6 +26,7 @@ The first Phase 1 vertical slice is now available:
 - Open the relevant axe-core guidance for each finding
 - Install as a standalone desktop or mobile web app from a supported browser
 - Block local, private, and internal network targets before and during scans
+- Create an account with persistent, user-scoped scan history
 
 The URL field accepts either a complete address such as
 `https://example.com` or a domain such as `example.com`. OpenStandard adds the
@@ -64,3 +65,14 @@ testing still require human review.
 OpenStandard only scans public HTTP and HTTPS destinations. It rejects
 credentials in URLs, non-standard ports, local hostnames, private IP ranges,
 and redirects or subresources that resolve to private networks.
+
+### Accounts and privacy
+
+Create an account from the browser interface to keep scan history available
+across refreshes and devices. Passwords are stored as scrypt hashes, never as
+plain text. Sessions use random, hashed tokens in an HTTP-only cookie and scans,
+reports, and screenshots are scoped to the signed-in user.
+
+The current development implementation does not yet include email
+verification, password reset, rate limiting, or account deletion. Add those
+controls before operating a public production service.
