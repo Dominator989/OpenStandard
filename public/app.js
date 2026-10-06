@@ -164,6 +164,11 @@ authToggle.addEventListener("click", () => {
   if (!authPanel.hidden) document.querySelector("#auth-email").focus();
 });
 
+document.addEventListener("click", (event) => {
+  if (authPanel.hidden || authPanel.contains(event.target) || authToggle.contains(event.target)) return;
+  authPanel.hidden = true;
+});
+
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   installPrompt = event;
