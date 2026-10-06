@@ -14,6 +14,12 @@ reports and practical remediation guidance.
 - Track findings across scans
 - Suggest fixes with links to authoritative guidance
 
+## Product overview
+
+Read [docs/product-overview.md](docs/product-overview.md) for the proposed
+customer workflow, MVP scope, technical direction, and accessibility-testing
+principles.
+
 ## Status
 
 Early project scaffold. Product decisions and implementation will be developed
