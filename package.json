@@ -1,0 +1,27 @@
+{
+  "name": "accesslens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Evidence-backed accessibility scanning for small teams",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "axe-core": "^4.10.2",
+    "better-sqlite3": "^11.7.0",
+    "express": "^5.1.0",
+    "playwright": "^1.63.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

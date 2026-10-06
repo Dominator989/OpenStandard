@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AccessLens | Accessibility workspace</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="shell topbar">
+    <a class="brand" href="/"><span class="brand-mark">AL</span><span>AccessLens</span></a>
+    <span class="topbar-note">Accessibility intelligence for modern teams</span>
+  </header>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Accessibility workspace</p>
+      <h1>Make every page easier to use.</h1>
+      <p class="hero-copy">Run a clear, evidence-backed accessibility check before your next release. Findings are grouped by impact and include the exact element that needs attention.</p>
+      <form id="scan-form" class="scan-form">
+        <label for="url">Website URL</label>
+        <div class="form-row"><input id="url" name="url" type="url" placeholder="https://example.com" required><button type="submit">Run accessibility scan <span aria-hidden="true">→</span></button></div>
+        <p id="form-message" class="form-message" role="status"></p>
+      </form>
+    </section>
+    <section class="content-grid">
+      <div>
+        <div class="section-heading"><div><p class="eyebrow">Recent work</p><h2>Scan history</h2></div><span id="scan-count" class="muted"></span></div>
+        <div id="scans" class="scan-list"><div class="empty">Your completed scans will appear here.</div></div>
+      </div>
+      <aside class="principles">
+        <p class="eyebrow">Built for useful answers</p>
+        <h2>From automated check to confident fix.</h2>
+        <ul><li><strong>Real browser</strong><span>Each scan loads the page as a user would experience it.</span></li><li><strong>Actionable evidence</strong><span>See the affected selector, HTML, and guidance for every finding.</span></li><li><strong>Respectful reporting</strong><span>Clear language for teams and clients, without alarmism.</span></li></ul>
+      </aside>
+    </section>
+    <section id="report" class="report" hidden></section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

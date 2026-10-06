@@ -14,13 +14,43 @@ reports and practical remediation guidance.
 - Track findings across scans
 - Suggest fixes with links to authoritative guidance
 
-## Product overview
+## Current implementation
 
-Read [docs/product-overview.md](docs/product-overview.md) for the proposed
-customer workflow, MVP scope, technical direction, and accessibility-testing
-principles.
+The first Phase 1 vertical slice is now available:
 
-## Status
+- Scan a public HTTP or HTTPS URL in a headless Chromium browser
+- Run axe-core's documented automated accessibility rules
+- Persist scans and findings in a local SQLite database
+- Capture a full-page screenshot as reproducible scan evidence
+- Group findings by impact and show the affected selector and HTML
+- Open the relevant axe-core guidance for each finding
 
-Early project scaffold. Product decisions and implementation will be developed
-incrementally.
+## Local development
+
+Node.js 20 or newer is required.
+
+For the easiest Windows startup, double-click `start-app.bat`, or run:
+
+```powershell
+./start-app.ps1
+```
+
+The launcher installs npm dependencies and the Chromium browser used by
+Playwright when they are not already available, then starts the development
+server.
+
+To start the app manually:
+
+```powershell
+npm install
+npx playwright install chromium
+npm run dev
+```
+
+Open `http://localhost:3100`. Scan results are stored in
+`./data/accesslens.sqlite` and screenshots are stored in
+`./data/screenshots/`.
+
+Automated results are a starting point, not a conformance claim. Keyboard
+navigation, focus behaviour, content meaning, zoom, and assistive technology
+testing still require human review.
