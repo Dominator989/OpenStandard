@@ -34,4 +34,11 @@ if (-not $chromiumInstalled) {
 
 Write-Step "Starting the development server..."
 Write-Host "[AccessLens] Open http://localhost:3100 in your browser." -ForegroundColor Green
+
+Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @(
+    "-NoProfile",
+    "-Command",
+    "Start-Sleep -Seconds 2; Start-Process 'http://localhost:3100'"
+)
+
 npm run dev
