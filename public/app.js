@@ -4,6 +4,13 @@ const scansElement = document.querySelector("#scans");
 const reportElement = document.querySelector("#report");
 const scanCount = document.querySelector("#scan-count");
 const installButton = document.querySelector("#install-app");
+const authPanel = document.querySelector("#auth-panel");
+const authForm = document.querySelector("#auth-form");
+const authMessage = document.querySelector("#auth-message");
+const accountSummary = document.querySelector("#account-summary");
+const logoutButton = document.querySelector("#logout-button");
+const authTabs = document.querySelectorAll("[data-auth-mode]");
+let authMode = "login";
 let installPrompt;
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
@@ -18,6 +25,22 @@ async function loadScans() {
   scanCount.textContent = scans.length ? `${scans.length} recent` : "";
   scansElement.innerHTML = scans.length ? scans.map((scan) => `<article class="scan-card"><div><a href="#report" data-scan-id="${scan.id}">${escapeHtml(scan.pageTitle || scan.url)}</a><div class="scan-meta">${escapeHtml(scan.url)} · ${formatDate(scan.createdAt)}</div></div><span class="status ${scan.status}">${scan.status === "complete" ? "Complete" : escapeHtml(scan.status)}</span></article>`).join("") : '<div class="empty">Your completed scans will appear here.</div>';
   document.querySelectorAll("[data-scan-id]").forEach((link) => link.addEventListener("click", () => showReport(link.dataset.scanId)));
+}
+
+function setAuthenticatedUser(user) {
+  const signedIn = Boolean(user);
+  authPanel.hidden = signedIn;
+  form.hidden = !signedIn;
+  accountSummary.hidden = !signedIn;
+  logoutButton.hidden = !signedIn;
+  if (signedIn) accountSummary.textContent = user.email;
+}
+
+async function loadCurrentUser() {
+  const response = await fetch("/api/auth/me");
+  const { user } = await response.json();
+  setAuthenticatedUser(user);
+  if (user) await loadScans();
 }
 
 async function showReport(id) {
@@ -79,6 +102,46 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
+authTabs.forEach((tab) => tab.addEventListener("click", () => {
+  authMode = tab.dataset.authMode;
+  authTabs.forEach((item) => item.classList.toggle("active", item === tab));
+  authForm.querySelector(".auth-submit").innerHTML = authMode === "login" ? 'Sign in <span aria-hidden="true">→</span>' : 'Create account <span aria-hidden="true">→</span>';
+  document.querySelector("#auth-password").autocomplete = authMode === "login" ? "current-password" : "new-password";
+  authMessage.textContent = "";
+}));
+
+authForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = authForm.querySelector("button[type=submit]");
+  button.disabled = true;
+  authMessage.textContent = authMode === "login" ? "Signing you in…" : "Creating your workspace…";
+  try {
+    const response = await fetch(`/api/auth/${authMode === "login" ? "login" : "register"}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: document.querySelector("#auth-email").value, password: document.querySelector("#auth-password").value })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Authentication failed.");
+    authForm.reset();
+    authMessage.textContent = "Your workspace is ready.";
+    setAuthenticatedUser(result.user);
+    await loadScans();
+  } catch (error) {
+    authMessage.textContent = error instanceof Error ? error.message : "Authentication failed.";
+  } finally {
+    button.disabled = false;
+  }
+});
+
+logoutButton.addEventListener("click", async () => {
+  await fetch("/api/auth/logout", { method: "POST" });
+  reportElement.hidden = true;
+  setAuthenticatedUser(null);
+  scansElement.innerHTML = '<div class="empty">Sign in to see your saved scans.</div>';
+  scanCount.textContent = "";
+});
+
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   installPrompt = event;
@@ -94,4 +157,4 @@ installButton.addEventListener("click", async () => {
 });
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js").catch(() => undefined);
-loadScans();
+loadCurrentUser();
