@@ -5,6 +5,7 @@ import path from "node:path";
 export type Scan = {
   id: number;
   userId: string | null;
+  guestTokenHash: string | null;
   url: string;
   pageTitle: string;
   status: "running" | "complete" | "failed";
@@ -49,6 +50,7 @@ database.exec(`
   CREATE TABLE IF NOT EXISTS scans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT REFERENCES users(id),
+    guest_token_hash TEXT,
     url TEXT NOT NULL,
     page_title TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL,
@@ -87,11 +89,14 @@ const scanColumns = database.prepare("PRAGMA table_info(scans)").all() as Array<
 if (!scanColumns.some((column) => column.name === "user_id")) {
   database.exec("ALTER TABLE scans ADD COLUMN user_id TEXT REFERENCES users(id)");
 }
+if (!scanColumns.some((column) => column.name === "guest_token_hash")) {
+  database.exec("ALTER TABLE scans ADD COLUMN guest_token_hash TEXT");
+}
 
-export function createScan(url: string, userId: string): number {
+export function createScan(url: string, userId: string | null, guestTokenHash: string | null): number {
   const result = database.prepare(
-    "INSERT INTO scans (url, user_id, status, created_at) VALUES (?, ?, 'running', ?)"
-  ).run(url, userId, new Date().toISOString());
+    "INSERT INTO scans (url, user_id, guest_token_hash, status, created_at) VALUES (?, ?, ?, 'running', ?)"
+  ).run(url, userId, guestTokenHash, new Date().toISOString());
   return Number(result.lastInsertRowid);
 }
 
@@ -114,8 +119,8 @@ export function addFinding(scanId: number, finding: Omit<Finding, "id" | "scanId
   `).run({ scanId, ...finding });
 }
 
-export function getScan(scanId: number, userId?: string): { scan: Scan; findings: Finding[] } | undefined {
-  const scan = database.prepare("SELECT id, user_id as userId, url, page_title as pageTitle, status, screenshot_path as screenshotPath, error_message as errorMessage, created_at as createdAt, completed_at as completedAt FROM scans WHERE id = ? AND (? IS NULL OR user_id = ?)").get(scanId, userId ?? null, userId ?? null) as Scan | undefined;
+export function getScan(scanId: number, userId?: string, guestTokenHash?: string): { scan: Scan; findings: Finding[] } | undefined {
+  const scan = database.prepare("SELECT id, user_id as userId, guest_token_hash as guestTokenHash, url, page_title as pageTitle, status, screenshot_path as screenshotPath, error_message as errorMessage, created_at as createdAt, completed_at as completedAt FROM scans WHERE id = ? AND ((? IS NOT NULL AND user_id = ?) OR (? IS NOT NULL AND guest_token_hash = ?))").get(scanId, userId ?? null, userId ?? null, guestTokenHash ?? null, guestTokenHash ?? null) as Scan | undefined;
   if (!scan) return undefined;
   const findings = database.prepare("SELECT id, scan_id as scanId, rule_id as ruleId, impact, help, description, help_url as helpUrl, selector, html, target FROM findings WHERE scan_id = ? ORDER BY CASE impact WHEN 'critical' THEN 1 WHEN 'serious' THEN 2 WHEN 'moderate' THEN 3 WHEN 'minor' THEN 4 ELSE 5 END, id").all(scanId) as Finding[];
   return { scan, findings };
