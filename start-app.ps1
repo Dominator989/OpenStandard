@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
 function Write-Step($message) {
-    Write-Host "[AccessLens] $message" -ForegroundColor Cyan
+    Write-Host "[OpenStandard] $message" -ForegroundColor Cyan
 }
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
@@ -33,7 +33,7 @@ if (-not $chromiumInstalled) {
 }
 
 Write-Step "Starting the development server..."
-Write-Host "[AccessLens] Open http://localhost:3100 in your browser." -ForegroundColor Green
+Write-Host "[OpenStandard] Open http://localhost:3100 in your browser." -ForegroundColor Green
 
 Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @(
     "-NoProfile",

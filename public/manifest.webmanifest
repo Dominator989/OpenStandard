@@ -1,6 +1,6 @@
 {
-  "name": "AccessLens",
-  "short_name": "AccessLens",
+  "name": "OpenStandard",
+  "short_name": "OpenStandard",
   "description": "Evidence-backed accessibility checks for modern web teams.",
   "start_url": "/",
   "display": "standalone",

@@ -1,6 +1,6 @@
-# AccessLens
+# OpenStandard
 
-AccessLens is an accessibility testing workspace for small web agencies and
+OpenStandard is an accessibility testing workspace for small web agencies and
 product teams. It turns repeatable browser checks into clear, client-ready
 reports and practical remediation guidance.
 
@@ -27,7 +27,7 @@ The first Phase 1 vertical slice is now available:
 - Install as a standalone desktop or mobile web app from a supported browser
 
 The URL field accepts either a complete address such as
-`https://example.com` or a domain such as `example.com`. AccessLens adds the
+`https://example.com` or a domain such as `example.com`. OpenStandard adds the
 secure protocol when it is omitted.
 
 ## Local development
@@ -53,7 +53,7 @@ npm run dev
 ```
 
 Open `http://localhost:3100`. Scan results are stored in
-`./data/accesslens.sqlite` and screenshots are stored in
+`./data/openstandard.sqlite` and screenshots are stored in
 `./data/screenshots/`.
 
 Automated results are a starting point, not a conformance claim. Keyboard

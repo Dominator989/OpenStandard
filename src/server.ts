@@ -36,4 +36,4 @@ app.post("/api/scans", async (request, response) => {
   return response.status(202).json({ scanId });
 });
 
-app.listen(port, () => console.log(`AccessLens listening on http://localhost:${port}`));
+app.listen(port, () => console.log(`OpenStandard listening on http://localhost:${port}`));

@@ -26,7 +26,7 @@ export type Finding = {
   target: string;
 };
 
-const databasePath = process.env.DATABASE_PATH ?? "./data/accesslens.sqlite";
+const databasePath = process.env.DATABASE_PATH ?? "./data/openstandard.sqlite";
 fs.mkdirSync(path.dirname(databasePath), { recursive: true });
 export const database = new Database(databasePath);
 database.pragma("journal_mode = WAL");

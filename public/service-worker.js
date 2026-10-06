@@ -1,4 +1,4 @@
-const CACHE_NAME = "accesslens-shell-v1";
+const CACHE_NAME = "openstandard-shell-v1";
 const SHELL_ASSETS = ["/", "/index.html", "/styles.css", "/app.js", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (event) => {

@@ -1,8 +1,8 @@
-# AccessLens product overview
+# OpenStandard product overview
 
 ## What it is
 
-AccessLens is an accessibility testing workspace for small web agencies and
+OpenStandard is an accessibility testing workspace for small web agencies and
 product teams. It turns repeatable browser checks into clear, client-ready
 reports and practical remediation guidance.
 
@@ -12,7 +12,7 @@ Small agencies often need to test accessibility but find existing tools too
 expensive, too technical for clients, or difficult to use for tracking
 improvements over time.
 
-AccessLens focuses on making automated findings understandable and useful for
+OpenStandard focuses on making automated findings understandable and useful for
 both developers and clients.
 
 ## Proposed workflow
@@ -67,7 +67,7 @@ The first useful version should include:
 
 ## Resume value
 
-AccessLens would demonstrate:
+OpenStandard would demonstrate:
 
 - Browser automation with Playwright
 - WCAG and accessibility engineering
@@ -88,6 +88,6 @@ Automated accessibility testing cannot prove that a website is fully
 accessible. Manual testing is still needed for keyboard usability, screen
 reader experience, focus order, content clarity, and complex interactions.
 
-AccessLens should clearly separate automated findings from issues that require
+OpenStandard should clearly separate automated findings from issues that require
 human review. It should report what it can verify without presenting a scan as
 an accessibility certification.
