@@ -13,28 +13,32 @@
 <body>
   <header class="shell topbar">
     <a class="brand" href="/"><span class="brand-mark">OS</span><span>OpenStandard</span></a>
-    <div class="topbar-actions"><span class="topbar-note">Accessibility intelligence for modern teams</span><span id="account-summary" class="account-summary" hidden></span><button id="logout-button" class="install-button" type="button" hidden>Sign out</button><button id="install-app" class="install-button" type="button" hidden>Install app</button></div>
+    <div class="topbar-actions"><span class="topbar-note">Accessibility intelligence for modern teams</span><span id="account-summary" class="account-summary" hidden></span><button id="logout-button" class="install-button" type="button" hidden>Sign out</button><button id="auth-toggle" class="install-button" type="button">Sign in</button><button id="install-app" class="install-button" type="button">Install app</button><section id="auth-panel" class="auth-panel auth-popover" hidden>
+      <div class="auth-heading"><p class="eyebrow">Optional account</p><h2>Keep every scan in one place.</h2><p>You can scan without an account. Sign in when you want history across devices.</p></div>
+      <div class="auth-tabs" role="tablist"><button class="auth-tab active" data-auth-mode="login" type="button">Sign in</button><button class="auth-tab" data-auth-mode="register" type="button">Create account</button></div>
+      <form id="auth-form" class="auth-form">
+        <label for="auth-email">Email address</label><input id="auth-email" type="email" autocomplete="email" required>
+        <label for="auth-password">Password</label><input id="auth-password" type="password" autocomplete="current-password" minlength="12" required>
+        <button type="submit" class="auth-submit">Sign in <span aria-hidden="true">→</span></button>
+        <p id="auth-message" class="form-message" role="status"></p>
+      </form>
+    </section></div>
   </header>
   <main class="shell">
     <section class="hero">
-      <p class="eyebrow">Accessibility workspace</p>
-      <h1>Make every page easier to use.</h1>
-      <p class="hero-copy">Run a clear, evidence-backed accessibility check before your next release. Findings are grouped by impact and include the exact element that needs attention.</p>
-      <section id="auth-panel" class="auth-panel">
-        <div class="auth-heading"><p class="eyebrow">Optional account</p><h2>Keep every scan in one place.</h2><p>You can scan without an account. Sign in when you want history across devices and a private workspace.</p></div>
-        <div class="auth-tabs" role="tablist"><button class="auth-tab active" data-auth-mode="login" type="button">Sign in</button><button class="auth-tab" data-auth-mode="register" type="button">Create account</button></div>
-        <form id="auth-form" class="auth-form">
-          <label for="auth-email">Email address</label><input id="auth-email" type="email" autocomplete="email" required>
-          <label for="auth-password">Password</label><input id="auth-password" type="password" autocomplete="current-password" minlength="12" required>
-          <button type="submit" class="auth-submit">Sign in <span aria-hidden="true">→</span></button>
-          <p id="auth-message" class="form-message" role="status"></p>
+      <div>
+        <p class="eyebrow">Accessibility workspace</p>
+        <h1>Make every page easier to use.</h1>
+        <p class="hero-copy">Run a clear, evidence-backed accessibility check before your next release. Findings are grouped by impact and include the exact element that needs attention.</p>
+      </div>
+      <div>
+        <form id="scan-form" class="scan-form" novalidate>
+          <p class="eyebrow">Start a scan</p>
+          <label for="url">Website URL</label>
+          <div class="form-row"><input id="url" name="url" type="text" inputmode="url" autocomplete="url" placeholder="example.com" required><button type="submit">Run accessibility scan <span aria-hidden="true">→</span></button></div>
+          <p id="form-message" class="form-message" role="status"></p>
         </form>
-      </section>
-      <form id="scan-form" class="scan-form" novalidate>
-        <label for="url">Website URL</label>
-        <div class="form-row"><input id="url" name="url" type="text" inputmode="url" autocomplete="url" placeholder="example.com" required><button type="submit">Run accessibility scan <span aria-hidden="true">→</span></button></div>
-        <p id="form-message" class="form-message" role="status"></p>
-      </form>
+      </div>
     </section>
     <section class="content-grid">
       <div>
