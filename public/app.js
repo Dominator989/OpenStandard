@@ -6,7 +6,6 @@ const scanCount = document.querySelector("#scan-count");
 const installButton = document.querySelector("#install-app");
 const authToggle = document.querySelector("#auth-toggle");
 const authPanel = document.querySelector("#auth-panel");
-const topbar = document.querySelector(".topbar");
 const authForm = document.querySelector("#auth-form");
 const authMessage = document.querySelector("#auth-message");
 const accountSummary = document.querySelector("#account-summary");
@@ -22,31 +21,12 @@ const impactOrder = ["critical", "serious", "moderate", "minor"];
 const impactLabel = (impact) => impact ? impact[0].toUpperCase() + impact.slice(1) : "Review";
 const unique = (values) => [...new Set(values)];
 
-function updateAuthSpacing() {
-  topbar.style.marginBottom = authPanel.hidden ? "" : `${authPanel.offsetHeight + 24}px`;
-}
-
-function bindScanCards() {
-  document.querySelectorAll(".scan-card[data-scan-id]").forEach((card) => {
-    const openReport = () => showReport(card.dataset.scanId);
-    card.addEventListener("click", (event) => {
-      openReport();
-    });
-    card.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        openReport();
-      }
-    });
-  });
-}
-
 async function loadScans() {
   const response = await fetch("/api/scans");
   const { scans } = await response.json();
   scanCount.textContent = scans.length ? `${scans.length} recent` : "";
-  scansElement.innerHTML = scans.length ? scans.map((scan) => `<article class="scan-card" data-scan-id="${scan.id}" role="link" tabindex="0"><div><span class="scan-title">${escapeHtml(scan.pageTitle || scan.url)}</span><div class="scan-meta">${escapeHtml(scan.url)} · ${formatDate(scan.createdAt)}</div></div><span class="status ${scan.status}">${scan.status === "complete" ? "Complete" : escapeHtml(scan.status)}</span></article>`).join("") : '<div class="empty">Your completed scans will appear here.</div>';
-  bindScanCards();
+  scansElement.innerHTML = scans.length ? scans.map((scan) => `<article class="scan-card"><div><a href="#report" data-scan-id="${scan.id}">${escapeHtml(scan.pageTitle || scan.url)}</a><div class="scan-meta">${escapeHtml(scan.url)} · ${formatDate(scan.createdAt)}</div></div><span class="status ${scan.status}">${scan.status === "complete" ? "Complete" : escapeHtml(scan.status)}</span></article>`).join("") : '<div class="empty">Your completed scans will appear here.</div>';
+  document.querySelectorAll("[data-scan-id]").forEach((link) => link.addEventListener("click", () => showReport(link.dataset.scanId)));
 }
 
 async function loadGuestScans() {
@@ -57,16 +37,13 @@ async function loadGuestScans() {
   }));
   const scans = results.filter(Boolean);
   scanCount.textContent = scans.length ? `${scans.length} on this device` : "";
-  scansElement.innerHTML = scans.length ? scans.map((scan) => `<article class="scan-card" data-scan-id="${scan.id}" role="link" tabindex="0"><div><span class="scan-title">${escapeHtml(scan.pageTitle || scan.url)}</span><div class="scan-meta">${escapeHtml(scan.url)} · ${formatDate(scan.createdAt)}</div></div><span class="status ${scan.status}">${scan.status === "complete" ? "Complete" : escapeHtml(scan.status)}</span></article>`).join("") : '<div class="empty">Your recent guest scans will appear here. Sign in to keep them across devices.</div>';
-  bindScanCards();
+  scansElement.innerHTML = scans.length ? scans.map((scan) => `<article class="scan-card"><div><a href="#report" data-scan-id="${scan.id}">${escapeHtml(scan.pageTitle || scan.url)}</a><div class="scan-meta">${escapeHtml(scan.url)} · ${formatDate(scan.createdAt)}</div></div><span class="status ${scan.status}">${scan.status === "complete" ? "Complete" : escapeHtml(scan.status)}</span></article>`).join("") : '<div class="empty">Your recent guest scans will appear here. Sign in to keep them across devices.</div>';
+  document.querySelectorAll("[data-scan-id]").forEach((link) => link.addEventListener("click", () => showReport(link.dataset.scanId)));
 }
 
 function setAuthenticatedUser(user) {
   signedIn = Boolean(user);
-  if (signedIn) {
-    authPanel.hidden = true;
-    updateAuthSpacing();
-  }
+  if (signedIn) authPanel.hidden = true;
   authToggle.hidden = signedIn;
   form.hidden = false;
   accountSummary.hidden = !signedIn;
@@ -184,14 +161,12 @@ logoutButton.addEventListener("click", async () => {
 
 authToggle.addEventListener("click", () => {
   authPanel.hidden = !authPanel.hidden;
-  updateAuthSpacing();
   if (!authPanel.hidden) document.querySelector("#auth-email").focus();
 });
 
 document.addEventListener("click", (event) => {
   if (authPanel.hidden || authPanel.contains(event.target) || authToggle.contains(event.target)) return;
   authPanel.hidden = true;
-  updateAuthSpacing();
 });
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -201,10 +176,7 @@ window.addEventListener("beforeinstallprompt", (event) => {
 });
 
 installButton.addEventListener("click", async () => {
-  if (!installPrompt) {
-    message.textContent = "To install OpenStandard, use your browser's install option or app menu.";
-    return;
-  }
+  if (!installPrompt) return;
   installPrompt.prompt();
   await installPrompt.userChoice;
   installPrompt = undefined;
