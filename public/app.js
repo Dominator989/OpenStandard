@@ -6,7 +6,6 @@ const scanCount = document.querySelector("#scan-count");
 const installButton = document.querySelector("#install-app");
 const authToggle = document.querySelector("#auth-toggle");
 const authPanel = document.querySelector("#auth-panel");
-const topbar = document.querySelector(".topbar");
 const authForm = document.querySelector("#auth-form");
 const authMessage = document.querySelector("#auth-message");
 const accountSummary = document.querySelector("#account-summary");
@@ -21,10 +20,6 @@ const formatDate = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: "m
 const impactOrder = ["critical", "serious", "moderate", "minor"];
 const impactLabel = (impact) => impact ? impact[0].toUpperCase() + impact.slice(1) : "Review";
 const unique = (values) => [...new Set(values)];
-
-function updateAuthSpacing() {
-  topbar.style.marginBottom = authPanel.hidden ? "" : `${authPanel.offsetHeight + 24}px`;
-}
 
 function bindScanCards() {
   document.querySelectorAll(".scan-card[data-scan-id]").forEach((card) => {
@@ -63,10 +58,7 @@ async function loadGuestScans() {
 
 function setAuthenticatedUser(user) {
   signedIn = Boolean(user);
-  if (signedIn) {
-    authPanel.hidden = true;
-    updateAuthSpacing();
-  }
+  if (signedIn) authPanel.hidden = true;
   authToggle.hidden = signedIn;
   form.hidden = false;
   accountSummary.hidden = !signedIn;
@@ -184,14 +176,12 @@ logoutButton.addEventListener("click", async () => {
 
 authToggle.addEventListener("click", () => {
   authPanel.hidden = !authPanel.hidden;
-  updateAuthSpacing();
   if (!authPanel.hidden) document.querySelector("#auth-email").focus();
 });
 
 document.addEventListener("click", (event) => {
   if (authPanel.hidden || authPanel.contains(event.target) || authToggle.contains(event.target)) return;
   authPanel.hidden = true;
-  updateAuthSpacing();
 });
 
 window.addEventListener("beforeinstallprompt", (event) => {
